@@ -1,66 +1,95 @@
 from flask import Flask, request, make_response
 from flask_json import FlaskJSON
-from databases import Database
+import sqlite3
 
 app = Flask(__name__)
 FlaskJSON(app)
 
-db = Database('sqlite+aiosqlite:///individual.db')
+conn = sqlite3.connect('individual.db', check_same_thread=False)
+conn.execute("PRAGMA foreign_keys = 1")
+conn.row_factory = sqlite3.Row
+cur = conn.cursor()
 endpoints = ["course", "student", "instructor", "grade"]
 
 def parse(data):
-    # parse data to a dictionary for easier js manipulation and firefox understanding
-    resp = []
+    temp = []
     for row in data:
-        resp.append(row._asdict())
-    return resp
+        temp.append(dict(row))
+    return temp
 
-async def create(endpoint):
-    # for creation of object uses json to hold most of content to be passed to the sql creation query
-    if endpoint == 'course':
-        values = {'course_title': request.json['course_title'], 'instructor_id': None if 'instructor_id' not in request.json else request.json['instructor_id']}
-        query = "INSERT INTO Courses(course_title, instructor_id) VALUES (:course_title, :instructor_id)"
-    elif endpoint == 'student':
-        values = {'name': request.json['name'], 'credits_earned': 0 if 'credits_earned' not in request.json else request.json['credits_earned']}
-        query = "INSERT INTO Instructors(name, credits_earned) VALUES (:name, :credits_earned)"
-    elif endpoint == 'instructor':
-        values = {'name': request.json['name'], 'department': request.json['department']}
-        query = "INSERT INTO Instructors(name, department) VALUES (:name, :department)"
-    elif endpoint == "grade":
-        values = {'course_id': request.json['course_id'], 'student_id': request.json['student_id']}
-        query = "INSERT INTO Grades(course_id, student_id) VALUES (:course_id, :student_id)"
-    else:
-        # returns 404 if somehow using a wrong endpoint
-        return make_response({}, 404)
-    await db.execute(query=query, values=values)
-    return request.json
-
-async def index(endpoint):
-    # alerts the user that the Flask server is running
-    if endpoint is None:
-        return "Flask is running"
-    # gets all the data from the tables for perusing multiple
-    elif endpoint in endpoints:   
+def index(endpoint):
+    if request.method == "POST":
+        # for creation of object uses json to hold most of content to be passed to the sql creation query
         if endpoint == 'course':
-            data = await db.fetch_all(query="SELECT * FROM Courses")
+            query = "INSERT INTO Courses(course_title, instructor_id) VALUES ('{}', {})".format(request.json['course_title'], None if 'instructor_id' not in request.json else request.json['instructor_id'])
         elif endpoint == 'student':
-            data = await db.fetch_all(query="SELECT * FROM Students")
+            query = "INSERT INTO Students(name, credits_earned) VALUES ('{}', {})".format(request.json['name'], 0 if 'credits_earned' not in request.json else request.json['credits_earned'])
         elif endpoint == 'instructor':
-            data = await db.fetch_all(query="SELECT * FROM Instructors")
-        elif endpoint == 'grade':  
-            data = await db.fetch_all(query="SELECT * FROM Grades")
-        return parse(data)
+            query = "INSERT INTO Instructors(name, department) VALUES ('{}', '{}')".format(request.json['name'], request.json['department'])
+        elif endpoint == "grade":
+            request.method = "GET"
+            data = query_id_grade(request.json['course_id'], request.json['student_id'])
+            query = ""
+            if data == []:
+                query = "INSERT INTO Grades(course_id, student_id, grade) VALUES ({}, {}, {})".format(request.json['course_id'], request.json['student_id'], 0 if 'grade' not in request.json else request.json['grade'])
+        else:
+            # returns 404 if somehow using a wrong endpoint
+            return make_response({}, 404)
+        if not query == "":
+            cur.execute(query)
+            conn.commit()
+        return request.json
+    else:
+        # alerts the user that the Flask server is running
+        if endpoint is None:
+            return "Flask is running"
+        # gets all the data from the tables for perusing multiple
+        elif endpoint in endpoints:   
+            if endpoint == 'course':
+                data = cur.execute("SELECT * FROM Courses")
+                data = data.fetchall()
+            elif endpoint == 'student':
+                data = cur.execute("SELECT * FROM Students")
+                data = data.fetchall()
+            elif endpoint == 'instructor':
+                data = cur.execute("SELECT * FROM Instructors")
+                data = data.fetchall()
+            elif endpoint == 'grade':  
+                data = cur.execute("SELECT * FROM Grades")
+                data = data.fetchall()
+            return parse(data)
         
-async def query_id(endpoint, id):
-    await db.connect()
+def query_id(endpoint, id):
     if request.method == 'POST':
+        data = []
         # for updating entities
         if endpoint == 'course':
-            query = "UPDATE Courses SET course_title = {}, instructor_id = {} WHERE course_id = {}".format(request.json['course_title'], request.json['instructor_id'], id)
+            query = "UPDATE Courses SET course_title = '{}', instructor_id = {} WHERE course_id = {}".format(request.json['course_title'], request.json['instructor_id'], id)
         elif endpoint == 'student':
-            query = "UPDATE Students SET name = {}, credits_earned = {} WHERE student_id = {}".format(request.json['name'], request.json['credits_earned'], id)
+            query = "UPDATE Students SET name = '{}', credits_earned = {} WHERE student_id = {}".format(request.json['name'], request.json['credits_earned'], id)
         elif endpoint == 'instructor':
-            query = "UPDATE Instructors SET name = {}, department = {} WHERE instructor_id = {}".format(request.json['name'], request.json['department'], id)
+            query = "UPDATE Instructors SET name = '{}', department = '{}' WHERE instructor_id = {}".format(request.json['name'], request.json['department'], id)
+        request.method = "GET"
+        data.append(query_id(endpoint, id))
+        cur.execute(query)
+        conn.commit()
+        data.append(query_id(endpoint, id))
+        return data
+    elif request.method == 'PUT':
+        if endpoint == 'course':
+            query = "DELETE FROM Courses WHERE course_id = {}".format(id)
+        elif endpoint == 'student':
+            query = "DELETE FROM Students WHERE student_id = {}".format(id)
+        elif endpoint == 'instructor':
+            query = "DELETE FROM Instructors WHERE instructor_id = {}".format(id)
+        else:
+            # if smehow trying to delete an endpoint that doesnt exit return 404
+            return make_response({}, 404)
+        request.method = "GET"
+        data = query_id(endpoint, id)
+        cur.execute(query)
+        conn.commit()
+        return data
     else:
         # return the entity based on id
         if endpoint == 'course':
@@ -72,22 +101,21 @@ async def query_id(endpoint, id):
         else:
             # return 404 if wrong endpoint is used
             return make_response({}, 404)
-        data = await db.fetch_all(query=query)
-        return parse(data)
+        data = cur.execute(query)
+        data = data.fetchall()
+        return parse(data)    
 
-async def query_id_grade(course_id, student_id):
-    await db.connect()
-    # for updating the grades
-    if request.method == "POST":
-        await db.execute(query="UPDATE Grades SET grade = {} WHERE (course_id = {}, student_id = {})".format(request.json['grade'], course_id, student_id))    
+def query_id_grade(course_id, student_id):
     resp = []
     # for getting the data depending on the ids
     if course_id > 0 and student_id > 0:
-        data = await db.fetch_all("SELECT * FROM Instructors WHERE (course_id = {} AND student_id = {})".format(course_id, student_id))
+        data = cur.execute("SELECT * FROM Grades WHERE (course_id = {} AND student_id = {})".format(course_id, student_id))
+        data = data.fetchall()
         resp = parse(data)
     else:
         # will get all the data based on one id
-        data = await index('grade')
+        request.method = "GET"
+        data = index('grade')
         if course_id < 1:
             for row in data:
                 if row['student_id'] == student_id:
@@ -96,41 +124,20 @@ async def query_id_grade(course_id, student_id):
             for row in data:
                 if row['course_id'] == course_id:
                     resp.append(row)
-    return resp
-
-async def delete(endpoint, id):
-    # deletes the chosen entity based on the id
-    await db.connect()
-    if endpoint == 'course':
-        query = "DELETE FROM Courses WHERE course_id = {}".format(id)
-    elif endpoint == 'student':
-        query = "DELETE FROM Students WHERE student_id = {}".format(id)
-    elif endpoint == 'instructor':
-        query = "DELETE FROM Instructors WHERE instructor_id = {}".format(id)
-    else:
-        # if smehow trying to delete an endpoint that doesnt exit return 404
-        return make_response({}, 404)
-    data = await query_id(endpoint, id)
-    await db.execute(query=query)
-    return data
-    
-async def delete_grade(course_id, student_id):
-    await db.connect()
     # deletes the grade based on the composite key
-    query = "DELETE FROM Grades WHERE (course_id = {} AND student_id = {})".format(course_id, student_id)
-    data = query_id_grade(course_id, student_id)
-    await db.execute(query=query)
-    return data
+    if request.method == "PUT":
+        cur.execute("DELETE FROM Grades WHERE (course_id = {} AND student_id = {})".format(course_id, student_id))
+        conn.commit()
+    # for updating the grades
+    elif request.method == "POST":
+        cur.execute("UPDATE Grades SET grade = {} WHERE (course_id = {} AND student_id = {})".format(request.json['grade'], course_id, student_id))    
+        conn.commit()
+    return resp
 
 # create all necessary CRUD API url rules
 for endpoint in endpoints:
-    # all the GET commands for robust choice and last two are also for updating
+    # all the GET commands for robust choice and post for creating and updating
     app.add_url_rule("/", view_func=index, methods=["GET"], defaults={'endpoint': None})
-    app.add_url_rule("/" + endpoint, view_func=index, methods=["GET"], defaults={'endpoint': endpoint})
-    app.add_url_rule("/" + endpoint + "/<int:id>", view_func=query_id, methods=["GET", "POST"], defaults={'endpoint': endpoint})
-    app.add_url_rule("/grade/<int:course_id>/<int:student_id>", view_func=query_id_grade, methods=["GET", "POST"])
-    # all the PUT for deletion
-    app.add_url_rule("/" + endpoint + "/<int:id>", view_func=delete, methods=["PUT"], defaults={'endpoint': endpoint})
-    app.add_url_rule("/grade/<int:course_id>/<int:student_id>", view_func=delete_grade, methods=["PUT"])
-    # all the POST for creation
-    app.add_url_rule("/" + endpoint, view_func=create, methods=["POST"], defaults={'endpoint': endpoint})
+    app.add_url_rule("/" + endpoint, view_func=index, methods=["GET", "POST"], defaults={'endpoint': endpoint})
+    app.add_url_rule("/" + endpoint + "/<int:id>", view_func=query_id, methods=["GET", "POST", "PUT"], defaults={'endpoint': endpoint})
+    app.add_url_rule("/grade/<int:course_id>/<int:student_id>", view_func=query_id_grade, methods=["GET", "POST", "PUT"])
