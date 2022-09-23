@@ -1,10 +1,11 @@
 import React from "react";
 import './App.css';
-import {useParams} from 'react-router-dom'
+import {useParams, useNavigate } from 'react-router-dom'
 import {Button, Row, Col, Form} from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 function New() {
+    const navigate = useNavigate();
     const [form, setForm] = React.useState({});
     const [validated, setValidated] = React.useState(false);
     const { endpoint } = useParams()
@@ -28,6 +29,7 @@ function New() {
                 .then((data) => console.log(data))
         }
         setValidated(true);
+        navigate('/')
     }
 
     const setField = (field, value) => {
@@ -72,13 +74,13 @@ function New() {
                         <Col>
                             <Form.Group className="mb-3" controlId="formName">
                                 <Form.Label>Student's Name</Form.Label>
-                                <Form.Control type="text" onChange={e => setField('name', e.target.value)} placeholder="Enter the Instructor's Name"/>
+                                <Form.Control type="text" onChange={e => setField('name', e.target.value)} placeholder="Enter the Student's Name"/>
                             </Form.Group>
                         </Col>
                         <Col>
                             <Form.Group className="mb-3" controlId="formCreditsEarned">
                                 <Form.Label>Student's Credits Earned</Form.Label>
-                                <Form.Control type="text" onChange={e => setField('credits_earned', e.target.value)} placeholder="Enter the Instructor's Department"/>
+                                <Form.Control type="text" onChange={e => setField('credits_earned', e.target.value)} placeholder="Enter the Amount of Credits"/>
                             </Form.Group>
                         </Col>
                     </Row>
@@ -96,13 +98,13 @@ function New() {
                         <Col>
                             <Form.Group className="mb-3" controlId="formName">
                                 <Form.Label>Course's Title</Form.Label>
-                                <Form.Control type="text" onChange={e => setField('course_title', e.target.value)} placeholder="Enter the Instructor's Name"/>
+                                <Form.Control type="text" onChange={e => setField('course_title', e.target.value)} placeholder="Enter the Course's Title"/>
                             </Form.Group>
                         </Col>
                         <Col>
                             <Form.Group className="mb-3" controlId="formDepartment">
                                 <Form.Label>Instructor's ID</Form.Label>
-                                <Form.Control type="text" onChange={e => setField('instructor_id', e.target.value)} placeholder="Enter the Instructor's Department"/>
+                                <Form.Control type="text" onChange={e => setField('instructor_id', e.target.value)} placeholder="Enter the Instructor's ID"/>
                             </Form.Group>
                         </Col>
                     </Row>
@@ -110,10 +112,11 @@ function New() {
                 <Button type="submit" onClick={handleSubmit}>Submit</Button>
                 </div>
             :
-                <div></div>
+                <div>
+                    <h1>404</h1>
+                </div>
             ))}
-        </>
-        
+        </>   
     )
 }
 

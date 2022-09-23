@@ -22,7 +22,10 @@ def index(endpoint):
     if request.method == "POST":
         # for creation of object uses json to hold most of content to be passed to the sql creation query
         if endpoint == 'course':
-            query = "INSERT INTO Courses(course_title, instructor_id) VALUES ('{}', {})".format(request.json['course_title'], None if 'instructor_id' not in request.json else request.json['instructor_id'])
+            if not 'instructor_id' in request.json:
+                query = "INSERT INTO Courses(course_title) VALUES ('{}')".format(request.json['course_title'])
+            else:
+                query = "INSERT INTO Courses(course_title, instructor_id) VALUES ('{}', {})".format(request.json['course_title'], request.json['instructor_id'])
         elif endpoint == 'student':
             query = "INSERT INTO Students(name, credits_earned) VALUES ('{}', {})".format(request.json['name'], 0 if 'credits_earned' not in request.json else request.json['credits_earned'])
         elif endpoint == 'instructor':

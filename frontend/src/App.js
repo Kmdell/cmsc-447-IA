@@ -1,9 +1,13 @@
-import React from "react";
+import React, { useEffect } from "react";
 import './App.css';
+import { useNavigate } from "react-router-dom";
 import {Button, Table} from 'react-bootstrap';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTrash, faEdit } from "@fortawesome/free-solid-svg-icons";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 function App() {
+  const navigate = useNavigate();
   const [instructors, setInstructors] = React.useState(null)
   const [students, setStudents] = React.useState(null)
   const [courses, setCourses] = React.useState(null)
@@ -25,6 +29,17 @@ function App() {
     fetchData();
   }, []);
 
+  function handleDelete(endpoint, id) {
+    fetch("http://127.0.0.1:5000/" + endpoint + "/" + id, {method: "PUT"})
+      .then(() => {
+        window.location.reload();
+      });
+  }
+
+  function handleRedirect(endpoint, id) {
+    navigate('/' + endpoint + "/edit/" + id)
+  }
+
   return (
     <>
       <div className="Table">
@@ -36,6 +51,8 @@ function App() {
               <th>Instructor ID</th>
               <th>Name</th>
               <th>Department</th>
+              <th>Edit</th>
+              <th>Delete</th>
             </tr>
           </thead>
           <tbody>
@@ -49,6 +66,16 @@ function App() {
                 <td>{info.instructor_id}</td>
                 <td>{info.name}</td>
                 <td>{info.department}</td>
+                <td>
+                  <Button onClick={() => {handleRedirect("instructor", info.instructor_id)}}>
+                    <FontAwesomeIcon icon={faEdit}/>
+                  </Button>
+                </td>
+                <td>
+                  <Button onClick={() => {handleDelete("instructor", info.instructor_id)}}>
+                    <FontAwesomeIcon icon={faTrash}/>
+                  </Button>
+                </td>
               </tr>)
             })}
           </tbody>
@@ -63,6 +90,8 @@ function App() {
               <th>Student ID</th>
               <th>Name</th>
               <th>Credits Earned</th>
+              <th>Edit</th>
+              <th>Delete</th>
             </tr>
           </thead>
           <tbody>
@@ -76,6 +105,16 @@ function App() {
                 <td>{info.student_id}</td>
                 <td>{info.name}</td>
                 <td>{info.credits_earned}</td>
+                <td>
+                  <Button onClick={() => {handleRedirect("student", info.student_id)}}>
+                    <FontAwesomeIcon icon={faEdit}/>
+                  </Button>
+                </td>
+                <td>
+                  <Button onClick={() => {handleDelete("student", info.student_id)}}>
+                    <FontAwesomeIcon icon={faTrash} />
+                  </Button>
+                </td>
               </tr>)
             })}
           </tbody>
@@ -90,6 +129,8 @@ function App() {
               <th>Course ID</th>
               <th>Course Title</th>
               <th>Instructor ID</th>
+              <th>Edit</th>
+              <th>Delete</th>
             </tr>
           </thead>
           <tbody>
@@ -98,11 +139,21 @@ function App() {
               <td colSpan={5}>Loading...</td>
             </tr>
             :
-            students.map((info) => {
+            courses.map((info) => {
               return(<tr>
                 <td>{info.course_id}</td>
                 <td>{info.course_title}</td>
-                <td>{info.instructor_id}</td>
+                <td>{info.instructor_id == null ? "TBA" : info.instructor_id}</td>
+                <td>
+                  <Button onClick={() => {handleRedirect("course", info.course_id)}}>
+                    <FontAwesomeIcon icon={faEdit}/>
+                  </Button>
+                </td>
+                <td>
+                  <Button variant="primary" onClick={() => {handleDelete("course", info.course_id)}}>
+                    <FontAwesomeIcon icon={faTrash} />
+                  </Button>
+                </td>
               </tr>)
             })}
           </tbody>

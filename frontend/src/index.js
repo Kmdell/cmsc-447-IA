@@ -3,7 +3,8 @@ import ReactDOM from 'react-dom/client';
 import {BrowserRouter as Router, Routes, Route} from "react-router-dom";
 import './index.css';
 import App from './App';
-import New from './New'
+import New from './New';
+import Edit from './Edit';
 import reportWebVitals from './reportWebVitals';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
@@ -12,9 +13,7 @@ root.render(
     <Routes basename={'/'}>
       <Route path='/' element={<App/>} />
       <Route path='/:endpoint/new' element={<New/>} /> 
-      <Route path='/instructor/edit/:id' element={<App/>} />
-      <Route path='/student/edit/:id' element={<App/>} />
-      <Route path='/course/edit/:id' element={<App/>} />
+      <Route path='/:endpoint/edit/:id' element={<Edit/>} />
     </Routes>
   </Router>
 );
