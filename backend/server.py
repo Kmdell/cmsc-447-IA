@@ -1,10 +1,11 @@
 from flask import Flask, request, make_response
+from flask_cors import CORS
 from flask_json import FlaskJSON
 import sqlite3
 
 app = Flask(__name__)
+CORS(app)
 FlaskJSON(app)
-
 conn = sqlite3.connect('individual.db', check_same_thread=False)
 conn.execute("PRAGMA foreign_keys = 1")
 conn.row_factory = sqlite3.Row
@@ -58,7 +59,7 @@ def index(endpoint):
                 data = cur.execute("SELECT * FROM Grades")
                 data = data.fetchall()
             return parse(data)
-        
+
 def query_id(endpoint, id):
     if request.method == 'POST':
         data = []
