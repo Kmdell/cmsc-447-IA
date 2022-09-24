@@ -16,6 +16,7 @@ function New() {
             event.preventDefault();
             event.stopPropagation();
         } else {
+            console.log(form)
             const reqOptions = {
                 method: 'POST',
                 headers: {
@@ -112,10 +113,40 @@ function New() {
                 <Button type="submit" onClick={handleSubmit}>Submit</Button>
                 </div>
             :
+                ((endpoint === String("grade"))?
+                <div className="Table">
+                <br/>
+                <h1>Create a New Course</h1>
+                <hr/>
+                <Form>
+                    <Row>
+                        <Col>
+                            <Form.Group className="mb-3" controlId="formName">
+                                <Form.Label>Course's ID</Form.Label>
+                                <Form.Control type="text" onChange={e => setField('course_id', e.target.value)} placeholder="Enter the Course's Title"/>
+                            </Form.Group>
+                        </Col>
+                        <Col>
+                            <Form.Group className="mb-3" controlId="formDepartment">
+                                <Form.Label>Student's ID</Form.Label>
+                                <Form.Control type="text" onChange={e => setField('student_id', e.target.value)} placeholder="Enter the Instructor's ID"/>
+                            </Form.Group>
+                        </Col>
+                        <Col>
+                            <Form.Group className="mb-3" controlId="formDepartment">
+                                <Form.Label>Grade</Form.Label>
+                                <Form.Control type="text" onChange={e => setField('grade', e.target.value)} placeholder="Enter the Instructor's ID"/>
+                            </Form.Group>
+                        </Col>
+                    </Row>
+                </Form>
+                <Button type="submit" onClick={handleSubmit}>Submit</Button>
+                </div>
+            :
                 <div>
                     <h1>404</h1>
                 </div>
-            ))}
+            )))}
         </>   
     )
 }

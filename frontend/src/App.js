@@ -11,6 +11,7 @@ function App() {
   const [instructors, setInstructors] = React.useState(null)
   const [students, setStudents] = React.useState(null)
   const [courses, setCourses] = React.useState(null)
+  const [grades, setGrades] = React.useState(null)
 
   React.useEffect(() => {
     async function fetchData() {
@@ -25,6 +26,10 @@ function App() {
       await fetch("http://127.0.0.1:5000/course", {method: "GET"})
         .then((res) => res.json())
         .then((data) => setCourses(data));
+
+        await fetch("http://127.0.0.1:5000/grade", {method: "GET"})
+        .then((res) => res.json())
+        .then((data) => setGrades(data));
     }
     fetchData();
   }, []);
@@ -38,6 +43,17 @@ function App() {
 
   function handleRedirect(endpoint, id) {
     navigate('/' + endpoint + "/edit/" + id)
+  }
+
+  function handleGradeDelete(endpoint, course_id, student_id) {
+    fetch("http://127.0.0.1:5000/" + endpoint + "/" + course_id + "/" + student_id, {method: "PUT"})
+      .then(() => {
+        window.location.reload();
+      });
+  }
+
+  function handleGradeRedirect(endpoint, course_id, student_id) {
+    navigate('/' + endpoint + "/edit/" + course_id + "/" + student_id)
   }
 
   return (
@@ -67,12 +83,12 @@ function App() {
                 <td>{info.name}</td>
                 <td>{info.department}</td>
                 <td>
-                  <Button onClick={() => {handleRedirect("instructor", info.instructor_id)}}>
+                  <Button onClick={() => {handleRedirect("instructor", info.instructor_id, "")}}>
                     <FontAwesomeIcon icon={faEdit}/>
                   </Button>
                 </td>
                 <td>
-                  <Button onClick={() => {handleDelete("instructor", info.instructor_id)}}>
+                  <Button onClick={() => {handleDelete("instructor", info.instructor_id, "")}}>
                     <FontAwesomeIcon icon={faTrash}/>
                   </Button>
                 </td>
@@ -159,6 +175,45 @@ function App() {
           </tbody>
         </Table>
         <Button variant="primary" href="/course/new" style={{justifyContent:'right'}}>Create New</Button>
+        <hr/>
+        <br/>
+        <h1>Grades</h1>
+        <Table striped bordered hover>
+          <thead>
+            <tr>
+              <th>Course ID</th>
+              <th>Student ID</th>
+              <th>Grade</th>
+              <th>Edit</th>
+              <th>Delete</th>
+            </tr>
+          </thead>
+          <tbody>
+            {grades == null?
+            <tr>
+              <td colSpan={5}>Loading...</td>
+            </tr>
+            :
+            grades.map((info) => {
+              return(<tr>
+                <td>{info.course_id}</td>
+                <td>{info.student_id}</td>
+                <td>{info.grade}</td>
+                <td>
+                  <Button onClick={() => {handleGradeRedirect("grade", info.course_id, info.student_id)}}>
+                    <FontAwesomeIcon icon={faEdit}/>
+                  </Button>
+                </td>
+                <td>
+                  <Button variant="primary" onClick={() => {handleGradeDelete("grade", info.course_id, info.student_id)}}>
+                    <FontAwesomeIcon icon={faTrash} />
+                  </Button>
+                </td>
+              </tr>)
+            })}
+          </tbody>
+        </Table>
+        <Button variant="primary" href="/grade/new" style={{justifyContent:'right'}}>Create New</Button>
       </div>
     </>
   );

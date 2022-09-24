@@ -3,21 +3,23 @@ import './App.css';
 import {useParams, useNavigate} from 'react-router-dom'
 import {Button, Row, Col, Form, Table} from 'react-bootstrap';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrash, faEdit } from "@fortawesome/free-solid-svg-icons";
+import { faTrash, faEdit, faTemperature0 } from "@fortawesome/free-solid-svg-icons";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 function New() {
     const navigate = useNavigate();
     const [form, setForm] = React.useState({});
+    const [enroll, setEnroll] = React.useState([]);
+    const [dropdown, setDropdown] = React.useState([]);
     const [grades, setGrade] = React.useState(null);
-    const [validated, setValidated] = React.useState(false);
-    const { endpoint, id } = useParams()
+    const [value, setValue] = React.useState(null);
+    const { endpoint, id } = useParams();
     const delay = ms => new Promise(
         resolve => setTimeout(resolve, ms)
     );
 
-    function handleDelete(endpoint, id0, id1) {
-        fetch("http://127.0.0.1:5000/" + endpoint + "/" + id0 + "/" + id1, {method: "PUT"})
+    function handleDelete(course_id, student_id) {
+        fetch("http://127.0.0.1:5000/grade/" + course_id + "/" + student_id, {method: "PUT"})
           .then(() => {
             window.location.reload();
         });
@@ -65,7 +67,6 @@ function New() {
                 .then((res) => res.json())
                 .then((data) => console.log(data))
         }
-        setValidated(true);
         navigate('/')
     }
 
@@ -125,7 +126,7 @@ function New() {
                     <Button type="submit" onClick={handleSubmit}>Submit</Button>
                     <br/>
                     <br/>
-                    <h3>Students</h3>
+                    <h3>Courses</h3>
                     <hr/>
                     <Table striped bordered hover>
                         <thead>
@@ -137,7 +138,6 @@ function New() {
                             </tr>
                         </thead>
                         <tbody>
-                            {console.log(grades)}
                             {grades == null?
                             <tr>
                             <td colSpan={5}>Loading...</td>
@@ -153,7 +153,7 @@ function New() {
                                 </Button>
                                 </td>
                                 <td>
-                                <Button variant="primary" onClick={() => {handleDelete("course", info.course_id, info.student_id)}}>
+                                <Button variant="primary" onClick={() => {handleDelete(info.course_id, info.student_id)}}>
                                     <FontAwesomeIcon icon={faTrash} />
                                 </Button>
                                 </td>
@@ -162,7 +162,7 @@ function New() {
                         </tbody>
                     </Table>
                 </div>
-             :
+            :
                 ((endpoint === String("course"))?
                 <div className="Table">
                     <br/>
@@ -199,7 +199,7 @@ function New() {
                             </tr>
                         </thead>
                         <tbody>
-                            {console.log(grades)}
+                            {console.log(enroll)}
                             {grades == null?
                             <tr>
                             <td colSpan={5}>Loading...</td>
@@ -215,7 +215,7 @@ function New() {
                                 </Button>
                                 </td>
                                 <td>
-                                <Button variant="primary" onClick={() => {handleDelete("course", info.course_id, info.student_id)}}>
+                                <Button variant="primary" onClick={() => {handleDelete(info.course_id, info.student_id)}}>
                                     <FontAwesomeIcon icon={faTrash} />
                                 </Button>
                                 </td>

@@ -32,7 +32,7 @@ def index(endpoint):
             query = "INSERT INTO Instructors(name, department) VALUES ('{}', '{}')".format(request.json['name'], request.json['department'])
         elif endpoint == "grade":
             request.method = "GET"
-            data = query_id_grade(request.json['course_id'], request.json['student_id'])
+            data = query_id_grade(int(request.json['course_id']), int(request.json['student_id']))
             query = ""
             if data == []:
                 query = "INSERT INTO Grades(course_id, student_id, grade) VALUES ({}, {}, {})".format(request.json['course_id'], request.json['student_id'], 0 if 'grade' not in request.json else request.json['grade'])
@@ -111,6 +111,7 @@ def query_id(endpoint, id):
 
 def query_id_grade(course_id, student_id):
     resp = []
+
     # for getting the data depending on the ids
     if course_id > 0 and student_id > 0:
         data = cur.execute("SELECT * FROM Grades WHERE (course_id = {} AND student_id = {})".format(course_id, student_id))

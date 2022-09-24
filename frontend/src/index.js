@@ -5,6 +5,7 @@ import './index.css';
 import App from './App';
 import New from './New';
 import Edit from './Edit';
+import GradeEdit from './GradeEdit';
 import reportWebVitals from './reportWebVitals';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
@@ -14,6 +15,7 @@ root.render(
       <Route path='/' element={<App/>} />
       <Route path='/:endpoint/new' element={<New/>} /> 
       <Route path='/:endpoint/edit/:id' element={<Edit/>} />
+      <Route path='/grade/edit/:course_id/:student_id' element={<GradeEdit/>} />
     </Routes>
   </Router>
 );
