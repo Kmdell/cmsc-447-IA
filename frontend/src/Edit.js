@@ -3,16 +3,13 @@ import './App.css';
 import {useParams, useNavigate} from 'react-router-dom'
 import {Button, Row, Col, Form, Table} from 'react-bootstrap';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrash, faEdit, faTemperature0 } from "@fortawesome/free-solid-svg-icons";
+import { faTrash, faEdit } from "@fortawesome/free-solid-svg-icons";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 function New() {
     const navigate = useNavigate();
     const [form, setForm] = React.useState({});
-    const [enroll, setEnroll] = React.useState([]);
-    const [dropdown, setDropdown] = React.useState([]);
     const [grades, setGrade] = React.useState(null);
-    const [value, setValue] = React.useState(null);
     const { endpoint, id } = useParams();
     const delay = ms => new Promise(
         resolve => setTimeout(resolve, ms)
@@ -31,23 +28,22 @@ function New() {
 
     React.useEffect(() => {
         async function fetchData() {
-            {console.log(endpoint)}
             await delay(100)  
             await fetch("http://127.0.0.1:5000/" + endpoint + "/" + id, {method: "GET"})
                 .then((res) => res.json())
                 .then((data) => setForm(data[0]));
-            if (endpoint == "course") {
+            if (endpoint === "course") {
                 await fetch("http://127.0.0.1:5000/grade/" + id + "/0", {method: "GET"})
                     .then((res) => res.json())
                     .then((data) => setGrade(data));
-            } else if (endpoint == "student") {
+            } else if (endpoint === "student") {
                 await fetch("http://127.0.0.1:5000/grade/0/" + id, {method: "GET"})
                     .then((res) => res.json())
                     .then((data) => setGrade(data));
             }
         }
         fetchData();
-      }, []);
+      }, [endpoint, id]);
 
     const handleSubmit = (event) => {
         const _form = event.currentTarget;
@@ -199,7 +195,6 @@ function New() {
                             </tr>
                         </thead>
                         <tbody>
-                            {console.log(enroll)}
                             {grades == null?
                             <tr>
                             <td colSpan={5}>Loading...</td>

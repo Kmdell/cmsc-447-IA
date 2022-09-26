@@ -6,8 +6,10 @@ Ran on Ubuntu 22.04
 
 # Install dependencies for flask server and run
 ```
+sudo apt install python3-pip python3-flask
 cd backend
-pip3 install databases aiosqlite flask flask_json flask_cors flask[async] sqlite3
+. bin/activate
+pip3 install databases aiosqlite flask flask_json flask_cors flask[async]
 flask --app server.py run
 ```
 
