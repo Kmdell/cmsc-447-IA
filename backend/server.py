@@ -2,6 +2,7 @@ from flask import Flask, request, make_response
 from flask_cors import CORS
 from flask_json import FlaskJSON
 import sqlite3
+import threading
 
 app = Flask(__name__)
 CORS(app)
@@ -11,6 +12,7 @@ conn.execute("PRAGMA foreign_keys = 1")
 conn.row_factory = sqlite3.Row
 cur = conn.cursor()
 endpoints = ["course", "student", "instructor", "grade"]
+lock = threading.Lock()
 
 def parse(data):
     temp = []
@@ -40,15 +42,21 @@ def index(endpoint):
             # returns 404 if somehow using a wrong endpoint
             return make_response({}, 404)
         if not query == "":
-            cur.execute(query)
-            conn.commit()
+            lock.acquire()
+            try:
+                cur.execute(query)
+                conn.commit()
+            except:
+                lock.release()
+        lock.release()
         return request.json
     else:
         # alerts the user that the Flask server is running
         if endpoint is None:
             return "Flask is running"
         # gets all the data from the tables for perusing multiple
-        elif endpoint in endpoints:   
+        elif endpoint in endpoints:  
+            lock.acquire() 
             if endpoint == 'course':
                 data = cur.execute("SELECT * FROM Courses")
                 data = data.fetchall()
@@ -58,9 +66,10 @@ def index(endpoint):
             elif endpoint == 'instructor':
                 data = cur.execute("SELECT * FROM Instructors")
                 data = data.fetchall()
-            elif endpoint == 'grade':  
+            elif endpoint == 'grade':
                 data = cur.execute("SELECT * FROM Grades")
                 data = data.fetchall()
+            lock.release()
             return parse(data)
 
 def query_id(endpoint, id):
@@ -73,26 +82,36 @@ def query_id(endpoint, id):
             query = "UPDATE Students SET name = '{}', credits_earned = {} WHERE student_id = {}".format(request.json['name'], request.json['credits_earned'], id)
         elif endpoint == 'instructor':
             query = "UPDATE Instructors SET name = '{}', department = '{}' WHERE instructor_id = {}".format(request.json['name'], request.json['department'], id)
-        request.method = "GET"
-        data.append(query_id(endpoint, id))
-        cur.execute(query)
-        conn.commit()
-        data.append(query_id(endpoint, id))
+        lock.acquire()
+        try:
+            cur.execute(query)
+            conn.commit()
+        except:
+            data = make_response({}, 500)
+        lock.release()
         return data
     elif request.method == 'PUT':
         if endpoint == 'course':
-            query = "DELETE FROM Courses WHERE course_id = {}".format(id)
+            query = "SELECT * FROM Courses WHERE course_id = {}".format(id)
+            del_query = "DELETE FROM Courses WHERE course_id = {}".format(id)
         elif endpoint == 'student':
-            query = "DELETE FROM Students WHERE student_id = {}".format(id)
+            query = "SELECT * FROM Students WHERE student_id = {}".format(id)
+            del_query = "DELETE FROM Students WHERE student_id = {}".format(id)
         elif endpoint == 'instructor':
-            query = "DELETE FROM Instructors WHERE instructor_id = {}".format(id)
+            query = "SELECT * FROM Instructors WHERE instructor_id = {}".format(id)
+            del_query = "DELETE FROM Instructors WHERE instructor_id = {}".format(id)
         else:
             # if smehow trying to delete an endpoint that doesnt exit return 404
             return make_response({}, 404)
-        request.method = "GET"
-        data = query_id(endpoint, id)
-        cur.execute(query)
-        conn.commit()
+        lock.acquire()
+        try:
+            data = cur.execute(query)
+            data = data.fetchall()
+            cur.execute(del_query)
+            conn.commit()
+        except:
+            data = make_response({}, 500)
+        lock.release()
         return data
     else:
         # return the entity based on id
@@ -105,17 +124,21 @@ def query_id(endpoint, id):
         else:
             # return 404 if wrong endpoint is used
             return make_response({}, 404)
+        lock.acquire()
         data = cur.execute(query)
         data = data.fetchall()
+        lock.release()
         return parse(data)    
 
 def query_id_grade(course_id, student_id):
+    
     resp = []
-
     # for getting the data depending on the ids
     if course_id > 0 and student_id > 0:
+        lock.acquire()
         data = cur.execute("SELECT * FROM Grades WHERE (course_id = {} AND student_id = {})".format(course_id, student_id))
         data = data.fetchall()
+        lock.release()
         resp = parse(data)
     else:
         # will get all the data based on one id
@@ -131,12 +154,16 @@ def query_id_grade(course_id, student_id):
                     resp.append(row)
     # deletes the grade based on the composite key
     if request.method == "PUT":
+        lock.acquire()
         cur.execute("DELETE FROM Grades WHERE (course_id = {} AND student_id = {})".format(course_id, student_id))
         conn.commit()
+        lock.release()
     # for updating the grades
     elif request.method == "POST":
+        lock.acquire()
         cur.execute("UPDATE Grades SET grade = {} WHERE (course_id = {} AND student_id = {})".format(request.json['grade'], course_id, student_id))    
         conn.commit()
+        lock.release()
     return resp
 
 # create all necessary CRUD API url rules

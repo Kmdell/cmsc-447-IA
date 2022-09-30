@@ -7,7 +7,6 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 function New() {
     const navigate = useNavigate();
     const [form, setForm] = React.useState({});
-    const [validated, setValidated] = React.useState(false);
     const { endpoint } = useParams()
 
     const handleSubmit = (event) => {
@@ -29,7 +28,6 @@ function New() {
                 .then((res) => res.json())
                 .then((data) => console.log(data))
         }
-        setValidated(true);
         navigate('/')
     }
 
@@ -135,7 +133,7 @@ function New() {
                         <Col>
                             <Form.Group className="mb-3" controlId="formDepartment">
                                 <Form.Label>Grade</Form.Label>
-                                <Form.Control type="text" onChange={e => setField('grade', e.target.value)} placeholder="Enter the Instructor's ID"/>
+                                <Form.Control type="text" onChange={e => setField('grade', e.target.value)} placeholder="Enter the Student's Grade"/>
                             </Form.Group>
                         </Col>
                     </Row>

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import './App.css';
 import { useNavigate } from "react-router-dom";
 import {Button, Table} from 'react-bootstrap';
@@ -8,13 +8,17 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 function App() {
   const navigate = useNavigate();
-  const [instructors, setInstructors] = React.useState(null)
-  const [students, setStudents] = React.useState(null)
-  const [courses, setCourses] = React.useState(null)
-  const [grades, setGrades] = React.useState(null)
+  const [instructors, setInstructors] = React.useState(null);
+  const [students, setStudents] = React.useState(null);
+  const [courses, setCourses] = React.useState(null);
+  const [grades, setGrades] = React.useState(null);
+  const delay = ms => new Promise(
+    resolve => setTimeout(resolve, ms)
+);
 
   React.useEffect(() => {
     async function fetchData() {
+      await delay(100);
       await fetch("http://127.0.0.1:5000/instructor", {method: "GET"})
       .then((res) => res.json())
       .then((data) => setInstructors(data));
